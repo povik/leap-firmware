@@ -14,7 +14,9 @@ OPERAND_SIEVE = {
 	Opcode.PEEK:   (False, False, True),
 	Opcode.PUT:    (True, False, True),
 	Opcode.PUTC:   (True, True, True),
-	Opcode.UPDATE: (True, False, True)
+	Opcode.UPDATE: (True, False, True),
+
+	Opcode.MULT0:  (False, True, True)
 }
 
 class _EnterRoutineHelper:
