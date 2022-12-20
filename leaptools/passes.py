@@ -290,6 +290,10 @@ def select(prg, routidx, instrpos):
     rout.selected = visited
 
 @program_pass
+def select_none(prg, routidx=None):
+    prg.routines[routidx].selected = set()
+
+@program_pass
 def unselect(prg, routidx=None):
     '''
     Clear any prior selections.
