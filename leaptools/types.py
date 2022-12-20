@@ -1,4 +1,22 @@
 from enum import IntEnum
+from construct import *
+
+LEAPContext = Struct(
+    "bank0" / Int32ul[0x40],
+    "bank1" / Int32ul[0x40],
+    "bank2" / Int32ul[0x40],
+    "bank3" / Int32ul[0x40],
+)
+
+LEAPInstruction = Int32ul[4]
+
+LEAPExecutionInfo = Struct(
+    "context" / LEAPContext,
+    "instruction" / LEAPInstruction,
+)
+
+class LEAPTestrunnerFlags(IntEnum):
+    CLEAN_SLATE = 1
 
 class BitFieldsValue:
     def __init__(self, val, **kwargs):
