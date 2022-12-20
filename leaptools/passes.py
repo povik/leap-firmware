@@ -666,3 +666,25 @@ def compile_dsl(prg=None, fname=""):
     arrange_routines(prg)
     dump(prg)
     return image_inline(prg)
+
+@program_pass
+def asm(prg=None, fname=""):
+    '''
+    Do roughly the inverse of 'dump'.
+    '''
+
+    with open(fname) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("# Routine"):
+                prg.routines.append(Routine())
+            if not line or line.startswith("#"):
+                continue
+            if ":" in line:
+                line = line.split(":")[1].strip()
+            opcode, trail = line.split(" ", 1)
+            ops = trail.split(",", 4)
+            prg.routines[-1].instr.append(Instruction(
+                Opcode.__members__[opcode],
+                *map(Register.parse, ops)
+            ))
