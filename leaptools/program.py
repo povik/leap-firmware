@@ -58,6 +58,9 @@ class Global(Operand):
 class Register(Operand):
     @classmethod
     def parse(self, name):
+        name = name.strip()
+        if name == "--":
+            return None
         if len(name) < 2 or name[0] not in "abc":
             raise ValueError(f"bad register name: {name:r}")
         return Register(
