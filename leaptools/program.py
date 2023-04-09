@@ -62,7 +62,7 @@ class Register(Operand):
         if name == "--":
             return None
         if len(name) < 2 or name[0] not in "abc":
-            raise ValueError(f"bad register name: {name:r}")
+            raise ValueError(f"bad register name: {name!r}")
         return Register(
             " abc".index(name[0]),
             int(name[1:], 16)
