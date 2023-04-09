@@ -230,11 +230,6 @@ def deconstruct_operands(prg):
                 final_setters[k] = [Uninitialized()]
             final_setters[k].append(v)
 
-    for k, v in rout_final.items():
-        if k not in final_setters:
-            final_setters[k] = [Uninitialized()]
-        final_setters[k].append(v)
-
     final_setters = {
         k: Global(*v) if len(v) > 1 else v[0] \
         for k, v in final_setters.items()
