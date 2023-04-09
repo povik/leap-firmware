@@ -131,7 +131,8 @@ class Instruction(Operand):
         for i, op in enumerate(self.ops):
             if op is None:
                 continue
-            assert opspecs[op.bank - 1] is None
+            assert opspecs[op.bank - 1] is None \
+                or opspecs[op.bank - 1] == op.addr
             opspecs[op.bank - 1] = op.addr
             opbanks[i] = op.bank
 
