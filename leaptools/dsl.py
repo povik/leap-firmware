@@ -4,7 +4,7 @@ from .program import Routine, Instruction, Operand, Constant
 OPCODES = dict([(opcode.name, opcode) for opcode in Opcode])
 
 '''
-For some oprations we need to adjust the operand mapping to make it
+For some operations we need to adjust the operand mapping to make it
 more convenient (and save the user from having to pass in dummy operands
 to reach desired operand slots).
 '''
