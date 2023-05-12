@@ -55,6 +55,56 @@ class Global(Operand):
     def operand_str(self):
         return f"one of {'/'.join([op.operand_str() for op in self.cases])}"
 
+class RegisterRing:
+    def __init__(self, depth, width, bank=None, base=None):
+        self.depth = depth
+        self.width = width
+        self.bank = bank
+        if base is not None:
+            self.addrspan = range(base, base + depth * width)
+        else:
+            self.addrspan = None
+
+    @property
+    def base(self):
+        return self.addrspan.start
+
+    @property
+    def area(self):
+        return self.depth * self.width
+
+    def _assert_allocated(self):
+        assert self.bank is not None and self.addrspan is not None
+
+    def __contains__(self, reg):
+        assert isinstance(reg, Register)
+        self._assert_allocated()
+        return reg.bank == self.bank and reg.addr in self.addrspan
+
+    @property
+    def registers(self):
+        self._assert_allocated()
+        return [Register(self.bank, addr) for addr in self.addrspan]
+
+    def decode_offset(self, reg):
+        assert reg in self
+        return reg.addr - self.addrspan.start
+
+    def __repr__(self):
+        return f"<ring {id(self):#x} bank {self.bank!r} depth {self.depth!r} width {self.width!r}>"
+
+class RingOperand(Operand):
+    def __init__(self, ring, offset):
+        assert type(ring) is RegisterRing
+        self.ring = ring
+        self.offset = offset
+
+    def deps(self):
+        return []
+
+    def operand_str(self):
+        return f"offset {self.offset} in {self.ring!r}"
+
 class Register(Operand):
     @classmethod
     def parse(self, name):
@@ -181,6 +231,7 @@ class Routine:
         self.selected = None
         self.waitfull_ports = waitfull_ports
         self.waitempty_ports = waitempty_ports
+        self.rings = []
 
     def __iadd__(self, v):
         assert type(v) in [Instruction, list, tuple]

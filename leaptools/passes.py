@@ -206,7 +206,35 @@ def graph(prg, routidx=None):
     print("}", file=f)
 
 @program_pass
-def deconstruct_operands(prg):
+def deconstruct_regrings(prg):
+    '''
+    Replace register references with register ring references
+    where applicable.
+    '''
+
+    for rout in prg.routines:
+        written = set()
+
+        for inst in rout.instr:
+            for i, regop in enumerate(inst.ops):
+                if type(regop) is not Register or \
+                        regop in prg.register_specials:
+                    continue
+                for ring in rout.rings:
+                    if regop in ring:
+                        if ring in written:
+                            raise ValueError(f"writes-after-reads on the same register ring from one routine are not supported")
+                        inst.ops[i] = RingOperand(ring, ring.decode_offset(regop))
+            for ring in rout.rings:
+                if type(inst.out) is not Register or \
+                        inst.out in prg.register_specials:
+                    continue
+                if inst.out in ring:
+                    inst.out = RingOperand(ring, ring.decode_offset(inst.out))
+                    written.add(ring)
+
+@program_pass
+def deconstruct_simpleregs(prg):
     '''
     Walk through the program and rewrite instruction operands
     so that they point to earlier instructions instead of any
@@ -250,6 +278,20 @@ def deconstruct_operands(prg):
                     final_setters[regop] = newop = Uninitialized()
                 inst.ops[i] = newop
             state[inst.out] = inst
+
+@program_pass
+def add_regring(prg, routidx, base, depth, width):
+    depth = int(depth)
+    base_reg = Register.parse(base)
+    rout = prg.routines[int(routidx)]
+    rout.rings.append(RegisterRing(depth, width,
+                            bank=base_reg.bank,
+                            base=base_reg.addr))
+
+@program_pass
+def deconstruct(prg):
+    deconstruct_regrings(prg)
+    deconstruct_simpleregs(prg)
 
 @program_pass
 def select(prg, routidx, instrpos):
@@ -322,6 +364,8 @@ def clear_outs(prg):
 
     for rout in prg.routines:
         for inst in rout.instr:
+            if type(inst.out) is RingOperand:
+                continue
             inst.out = global_writers.get(inst, None)
 
 @program_pass
