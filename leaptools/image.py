@@ -31,6 +31,10 @@ class LEAPFROGSectionType(IntEnum):
         else:
             return f"{val:#x} (unknown)"
 
+    @property
+    def has_instructions(self):
+        return self in [self.INST0, self.INST1, self.INST2, self.INST3]
+
 class LEAPFROGSectionFlags(IntEnum):
     ROUTINE = 1
 
