@@ -69,38 +69,57 @@ def dump_py(prg):
     labels = {}
     global_cnt = 0
     inm_cnt = 0
-    def label(op):
-        global global_cnt, inm_cnt
-        if op in labels:
-            return labels[op]
-        elif type(op) is Global:
-            l = f"global{global_cnt}"
-            global_cnt += 1
-        elif type(op) is Instruction:
-            if op.out is not None:
-                return label(op.out)
-            l = f"inm{inm_cnt}"
-            inm_cnt += 1
-        else:
-            raise NotImplementedError(type(op))
-
-        labels[op] = l
-        return l
-
-    def conv(op, fpoint=False):
-        if op is None:
-            return "None"
-        elif type(op) is Constant:
-            if fpoint:
-                return f"{op.float:.8E}"
-            else:
-                return f"{op.val:#x}"
-        else:
-            return label(op)
 
     all_globals = set()
+    all_ringstates = set()
+    all_ringregs = set()
+
+    print('''
+def topbit(v):
+    if type(v) is int:
+        return bool(v & (1 << 31))
+    elif type(v) is float:
+        return v < 0
+    else:
+        raise NotImplementedError(type(v))
+
+''')
 
     for routno, rout in enumerate(prg.routines):
+        def label(op):
+            global global_cnt, inm_cnt
+            if type(op) is RingOperand:
+                ring = op.ring
+                s = f"rout{routno}ring{rout.rings.index(op.ring)}"
+                l = f"regs[({ring.bank!r}, {ring.base} + ({s} + {op.offset}) % {ring.area})]"
+                return l
+            if op in labels:
+                return labels[op]
+            elif type(op) is Global:
+                l = f"global{global_cnt}"
+                global_cnt += 1
+            elif type(op) is Instruction:
+                if op.out is not None:
+                    return label(op.out)
+                l = f"inm{inm_cnt}"
+                inm_cnt += 1
+            else:
+                raise NotImplementedError(type(op))
+
+            labels[op] = l
+            return l
+
+        def conv(op, fpoint=False):
+            if op is None:
+                return "None"
+            elif type(op) is Constant:
+                if fpoint:
+                    return f"{op.float:.8E}"
+                else:
+                    return f"{op.val:#x}"
+            else:
+                return label(op)
+
         mentioned_globals = set()
 
         for i, inst in enumerate(rout.instr):
@@ -114,6 +133,13 @@ def dump_py(prg):
         global_line = ", ".join([label(g) for g in mentioned_globals])
         print(f"\tglobal {global_line}")
         all_globals |= mentioned_globals
+
+        print(f"\tglobal regs")
+
+        for ringno, ring in enumerate(rout.rings):
+            print(f"\tglobal rout{routno}ring{ringno}")
+            all_ringstates.add(f"rout{routno}ring{ringno}")
+            all_ringregs |= set(ring.registers)
 
         for i, inst in enumerate(rout.instr):
             if not rout.is_selected(inst):
@@ -130,10 +156,21 @@ def dump_py(prg):
             elif opcode == Opcode.FSUB:
                 print(f"\t{label(inst)} = {conv(inst.op2, True)} - {conv(inst.op1, True)}")
             elif opcode == Opcode.FMUX:
-                print(f"\t{label(inst)} = {conv(inst.op2, True)} if ({conv(inst.op3, False)} & (1<<31)) else {conv(inst.op1, True)}")
+                print(f"\t{label(inst)} = {conv(inst.op2, True)} if topbit({conv(inst.op3, False)}) else {conv(inst.op1, True)}")
+            elif opcode == Opcode.FCMP:
+                print(f"\t{label(inst)} = 1.0 if {conv(inst.op2, True)} > {conv(inst.op1, True)} else -1.0")
             else:
                 print(f"\t{label(inst)} = {opcode.name}({conv(inst.op1, False)}, {conv(inst.op2, False)}, {conv(inst.op3, False)})")
-                #raise NotImplementedError(opcode)
+
+        for ringno, ring in enumerate(rout.rings):
+            print(f"\trout{routno}ring{ringno} = (rout{routno}ring{ringno} + {ring.width}) % {ring.area}")
+
+    print("def reset():")
+    global_line = ", ".join([label(g) for g in all_globals])
+    print(f"\tglobal {global_line}")
+    global_line = ", ".join([g for g in all_ringstates])
+    print(f"\tglobal {global_line}")
+    print("\tglobal regs")
 
     for g in all_globals:
         inits = [c for c in g.cases if type(c) is Constant]
@@ -141,7 +178,17 @@ def dump_py(prg):
         if not len(inits):
             continue
 
-        print(f"{label(g)} = {inits[0].val:.8E}")
+        print(f"\t{label(g)} = {inits[0].val}")
+
+    for r in all_ringstates:
+        print(f"\t{r} = 0")
+
+    print("\tregs = {}")
+    for r in all_ringregs:
+        # TODO: inits
+        print(f"\tregs[({r.bank!r}, {r.addr!r})] = None")
+
+    print("reset()")
 
 @program_pass
 def graph(prg, routidx=None):
