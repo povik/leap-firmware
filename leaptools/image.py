@@ -227,5 +227,8 @@ class Image:
                 raise IndexError(f"no backing for {spec!r} in image")
             sect.data[spec[1] - sect.load_base] = data
 
+    def __contains__(self, key):
+        return self._lookup_section(*key) is not None
+
 if __name__ == "__main__":
     Image.read(sys.argv[1]).dump()
