@@ -713,6 +713,19 @@ def image(prg):
     img.write(sys.stdout.buffer)
 
 @program_pass
+def image_write(prg, fname):
+    '''
+    Build a program image, output it on standard output.
+    '''
+    img = prg.build_image()
+    print(f"Writing image with {len(img.sections)} sections:", file=sys.stderr)
+    for sect in img.sections:
+        print(f"    {sect.type.name:6s} base {sect.load_base:x} size {sect.size:x} flags {sect.flags}",
+              file=sys.stderr)
+    with open(fname, "wb") as f:
+        img.write(f)
+
+@program_pass
 def image_inline(prg):
     '''
     Build a program image, return it (to be embedded in other passes).
