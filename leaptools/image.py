@@ -192,6 +192,8 @@ class Image:
                                  :spec[1].stop - sect.load_base]
         else:
             sect = self._lookup_section(*spec)
+            if sect is None:
+                raise IndexError(f"no backing for {spec!r} in image")
             return sect.data[spec[1] - sect.load_base]
 
     def __setitem__(self, spec, data):
@@ -221,6 +223,8 @@ class Image:
                       spec[1].stop - sect.load_base] = data
         else:
             sect = self._lookup_section(*spec)
+            if sect is None:
+                raise IndexError(f"no backing for {spec!r} in image")
             sect.data[spec[1] - sect.load_base] = data
 
 if __name__ == "__main__":
