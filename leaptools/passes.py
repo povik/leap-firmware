@@ -685,7 +685,7 @@ def load_dsl(prg, fname):
 
     with open(fname) as f:
         compiled = compile(f.read(), fname, "exec")
-        exec(compiled, dict(), {'b': b, 'Global': Global})
+        exec(compiled, {'b': b, 'Global': Global})
 
     print(f"Built {b.nroutines} routines containing {b.ninstr} instructions.",
           file=sys.stderr)
