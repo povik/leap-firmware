@@ -252,6 +252,20 @@ class Routine:
             else:   
                 print(f"+{off:02x}: {str(inst)}", file=f)
 
+def decode_sieve(vals):
+    return [
+        i * 32 + bitpos
+        for i, val in enumerate(vals)
+        for bitpos in range(32)
+        if val & (1 << bitpos)
+    ]
+
+def encode_sieve(hits, length):
+    ret = [0] * length
+    for hit in hits:
+        ret[hit // 32] = ret[hit // 32] | 1 << (hit % 32)
+    return ret
+
 class Program:
     def __init__(self):
         self.register_inits = {}
@@ -263,7 +277,25 @@ class Program:
     def from_image(self, img):
         prg = Program()
 
-        for routine_span in img.routines:
+        for typ, span in img.section_spans(range(Section.STATE1,
+                                                 Section.STATE3 + 1)):
+            bank = typ - Section.STATE0
+            for addr_delta, val in enumerate(img[typ,span]):
+                reg = Register(bank, span.start + addr_delta)
+                prg.register_inits[reg] = val
+
+        enabled_routines = set()
+
+        for sect in img.sections:
+            if sect.type == Section.ROUTINE_CTL \
+                    and sect.flags & SectionFlags.ROUTINE_EN:
+                enabled_routines.add(sect.load_base >> 16)
+
+        for rout_no in sorted(enabled_routines):
+            pc_limits = img[Section.ROUTINE_CTL, rout_no << 16 | 2]
+
+            routine_span = range(pc_limits & 0xffff, pc_limits >> 16)
+
             instr_parts = img[
                 Section.INST0:Section.INST3 + 1,
                 routine_span
@@ -274,17 +306,9 @@ class Program:
                  for pieces in zip(*instr_parts)]
             ))
 
-        for typ, span in img.section_spans(range(Section.STATE1,
-                                                 Section.STATE3 + 1)):
-            bank = typ - Section.STATE0
-            for addr_delta, val in enumerate(img[typ,span]):
-                reg = Register(bank, span.start + addr_delta)
-                prg.register_inits[reg] = val
-
-        for rout in prg.routines:
-            waitbase = rout.base << 16
-            rout.waitfull_ports = img[Section.WAITFULL_LIST,waitbase:]
-            rout.waitempty_ports = img[Section.WAITEMPTY_LIST,waitbase:]
+        for i, rout in enumerate(prg.routines):
+            rout.waitfull_ports = decode_sieve(img[Section.WF_SIEVE,i << 16:])
+            rout.waitempty_ports = decode_sieve(img[Section.WE_SIEVE,i << 16:])
 
         return prg
 
@@ -302,29 +326,27 @@ class Program:
             for addr, val in inits.items():
                 img[secttype, addr] = val
 
-        for rout in self.routines:
+        for rout_no, rout in enumerate(self.routines):
             assert rout.base is not None
             span = range(rout.base, rout.base + len(rout.instr))
-            img.reserve(Section.INST0, span, SectionFlags.ROUTINE)
-            img.reserve(Section.INST1, span, SectionFlags.ROUTINE)
-            img.reserve(Section.INST2, span, SectionFlags.ROUTINE)
-            img.reserve(Section.INST3, span, SectionFlags.ROUTINE)
+            img.reserve(Section.INST0, span)
+            img.reserve(Section.INST1, span)
+            img.reserve(Section.INST2, span)
+            img.reserve(Section.INST3, span)
 
             for off, inst in enumerate(rout.instr):
                 idx = rout.base + off
                 img[Section.INST0:Section.INST3 + 1, idx] = inst.encode()
 
-            waitbase = rout.base << 16
+            ctl_span = range(rout_no << 16, (rout_no << 16) + 8)
+            img.reserve(Section.ROUTINE_CTL, ctl_span, SectionFlags.ROUTINE_EN)
+            img[Section.ROUTINE_CTL, rout_no << 16 | 2] = span.start | (span.stop << 16)
 
-            if (nports := len(rout.waitempty_ports)):
-                img.reserve(Section.WAITEMPTY_LIST, range(waitbase, waitbase + nports))
-                for i, port in enumerate(sorted(rout.waitempty_ports)):
-                    img[Section.WAITEMPTY_LIST,waitbase + i] = port
-
-            if (nports := len(rout.waitfull_ports)):
-                img.reserve(Section.WAITFULL_LIST, range(waitbase, waitbase + nports))
-                for i, port in enumerate(sorted(rout.waitfull_ports)):
-                    img[Section.WAITFULL_LIST,waitbase + i] = port
+            sieves_span = range(rout_no << 16, (rout_no << 16) + 4)
+            img.reserve(Section.WE_SIEVE, sieves_span)
+            img.reserve(Section.WF_SIEVE, sieves_span)
+            img[Section.WE_SIEVE, sieves_span] = encode_sieve(rout.waitempty_ports, 4)
+            img[Section.WF_SIEVE, sieves_span] = encode_sieve(rout.waitfull_ports, 4)
 
         return img
 

@@ -1,6 +1,6 @@
 import sys
 import bisect
-from enum import IntEnum
+from enum import IntFlag, IntEnum
 from construct import *
 
 class LEAPFROGSectionType(IntEnum):
@@ -14,8 +14,9 @@ class LEAPFROGSectionType(IntEnum):
     INST2 = 0x20002
     INST3 = 0x20003
 
-    WAITEMPTY_LIST = 0x30000
-    WAITFULL_LIST  = 0x30001
+    ROUTINE_CTL = 0x30000
+    WE_SIEVE    = 0x30001
+    WF_SIEVE    = 0x30002
 
     @classmethod
     def try_cast(cls, val):
@@ -35,8 +36,8 @@ class LEAPFROGSectionType(IntEnum):
     def has_instructions(self):
         return self in [self.INST0, self.INST1, self.INST2, self.INST3]
 
-class LEAPFROGSectionFlags(IntEnum):
-    ROUTINE = 1
+class LEAPFROGSectionFlags(IntFlag):
+    ROUTINE_EN = 1
 
 class SectionTypeAdapter(Adapter):
     def _decode(self, obj, ctx, path):
@@ -54,9 +55,10 @@ LEAPFROGSection = Struct(
 )
 
 LEAPFROGImage = Struct(
-    "magic" / Const(0x1ea9, Int16ul),
-    "fmtversion" / Const(0, Int16ul),
+    "magic" / Const(0x1ea9f108, Int32ul),
+    "fmtversion" / Const(0, Int32ul),
     # version 0: in development, no guarantees
+    "imprint" / PaddedString(32, "ascii"),
     "nsections" / Int32ul,
     "section" / LEAPFROGSection[this.nsections], 
 )
@@ -68,6 +70,7 @@ class Image:
     def __init__(self):
         self.sections = []
         self.bases = []
+        self.imprint = ""
 
     @classmethod
     def read(self, f):
@@ -80,6 +83,7 @@ class Image:
             content = LEAPFROGImage.parse_stream(f)
 
         ret = Image()
+        ret.imprint = content.imprint
         ret.sections = content.section
         ret.bases = []
         ret.index()
@@ -88,6 +92,7 @@ class Image:
     @property
     def content(self):
         return Container(
+            imprint=self.imprint,
             nsections=len(self.sections),
             section=self.sections,
         )
@@ -119,14 +124,6 @@ class Image:
             data=[0] * len(span),
         ))
         self.index()
-
-    @property
-    def routines(self):
-        return [range(a, b) for a, b in sorted(set([
-            (sect.load_base, sect.load_base + sect.size)
-            for sect in self.sections
-            if sect.flags & LEAPFROGSectionFlags.ROUTINE
-        ]))]
 
     def section_spans(self, types=None):
         if types is not None:
