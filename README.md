@@ -1,8 +1,12 @@
-# LEAP tools
+# LEAP firmware
 
-Tools for analyzing and producing firmware for LEAP signal processors embedded in Apple SoCs
+This repository holds open-source LEAP firmware, required for microphone input on Apple Silicon Macs.
 
-## Usage
+## LEAP tools
+
+In addition to firmware sources themselves, this repository contains tools for analyzing and producing firmware for the LEAP signal processors embedded on Apple SoCs.
+
+### Usage of LEAP tools
 
 Provisional: Running `python -m leaptools --help` and `python -m leaptools --list-passes` gives some pointers.
 
