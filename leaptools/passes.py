@@ -41,7 +41,7 @@ def dump(prg):
     '''
     Dump the program and all its routines.
     '''
-    prg.dump(sys.stderr)
+    prg.dump(sys.stdout)
 
 @program_pass
 def dump_py(prg):
