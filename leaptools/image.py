@@ -18,6 +18,9 @@ class LEAPFROGSectionType(IntEnum):
     WE_SIEVE    = 0x30001
     WF_SIEVE    = 0x30002
 
+    IO_INIT     = 0x30100
+    PDM_SPECIAL = 0x30101
+
     @classmethod
     def try_cast(cls, val):
         try:
