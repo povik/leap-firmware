@@ -210,6 +210,8 @@ class Image:
             for addr, subdata in zip(spec[1], data):
                 self[secttype, addr] = subdata
         elif type(spec[1]) in [range, slice]:
+            if spec[1].stop is None:
+                spec = (spec[0], slice(spec[1].start, spec[1].start + len(data)))
             if not spec[1].stop > spec[1].start:
                 return
             sect = self._lookup_section(spec[0], spec[1].start)
