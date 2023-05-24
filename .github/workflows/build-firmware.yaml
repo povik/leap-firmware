@@ -1,13 +1,12 @@
-name: Python test
+name: Build firmware
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
+    tags: [ "*" ]
 
 jobs:
-  test-leaptools:
+  build-firmware:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,6 +23,14 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Test with pytest
+        apt update && apt install -y alsa-utils xxd
+    - name: Build
       run: |
-        python3 -m leaptools.test
+        make -C firmware/leapmic
+        make -C firmware/leapmic-passthrough
+    - name: Archive build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: firmware
+        path: |
+          firmware/leapmic*/leapmic*.bin
