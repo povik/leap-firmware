@@ -51,7 +51,8 @@ class Builder:
 		self.prg.register_specials.add(reg)
 
 	def update(self, glob, val):
-		glob.cases.append(self._assimilate_val(val))
+		assim = self._assimilate_val(val)
+		glob.cases.append(self.OR(assim, assim))
 
 	@classmethod
 	def _assimilate_val(self, val):
