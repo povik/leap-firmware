@@ -16,6 +16,9 @@ OPERAND_SIEVE = {
 	Opcode.PUT:    (True, False, True),
 	Opcode.PUTC:   (True, True, True),
 	Opcode.UPDATE: (True, False, True),
+	Opcode.F32_FMT: (False, True, True),
+	Opcode.FMULT:   (False, True, True),
+	Opcode.FMULT_NEG: (False, True, True),
 
 	Opcode.MULT0:  (False, True, True)
 }
