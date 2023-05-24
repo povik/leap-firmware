@@ -15,4 +15,4 @@ leap_firmware.leapfrog: leap_firmware_pre.leapfrog Makefile
 	rm $@.tmp
 
 clean:
-	rm leap_firmware.leapfrog leapmic-*.bin
+	rm -f leap_firmware.leapfrog leap_firmware_pre.leapfrog leapmic-passthrough.bin
