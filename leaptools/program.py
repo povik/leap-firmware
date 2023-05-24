@@ -1,4 +1,5 @@
 import struct
+import sys
 
 from .types import *
 from .image import Image, Section, SectionFlags
@@ -340,7 +341,12 @@ class Program:
 
             for off, inst in enumerate(rout.instr):
                 idx = rout.base + off
-                img[Section.INST0:Section.INST3 + 1, idx] = inst.encode()
+                try:
+                    img[Section.INST0:Section.INST3 + 1, idx] = inst.encode()
+                except Exception as e:
+                    print("Failed to encode the following instruction:", file=sys.stderr)
+                    print(f"\t{idx}: {inst!s}", file=sys.stderr)
+                    raise e
 
             ctl_span = range(rout_no << 16, (rout_no << 16) + 8)
             img.reserve(Section.ROUTINE_CTL, ctl_span, SectionFlags.ROUTINE_EN)
