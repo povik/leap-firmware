@@ -440,6 +440,11 @@ def get_placement_constraints(prg, rout):
             if type(op) is Global:
                 for case in op.cases:
                     if case in instr:
+                        if case is inst:
+                            # The instruction sourcing from the global
+                            # and updating the global are the same instruction.
+                            # No constraint in that case.
+                            continue
                         # instructions updating a global can only go *after*
                         # an instruction sourcing an operand from said global
                         constraints.append((case, inst, -1, 0, "global update-after-use"))
