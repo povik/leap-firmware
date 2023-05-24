@@ -451,6 +451,14 @@ def get_placement_constraints(prg, rout):
 
     return constraints
 
+def _print_constraint(constr, base_idx=-1, endp_idx=-1):
+    endp, base, offset, cost, cause = constr
+    print("", file=sys.stderr)
+    print(f"  {base_idx:2x}: {base}", file=sys.stderr)
+    print(f"  {endp_idx:2x}: {endp}", file=sys.stderr)
+    print("", file=sys.stderr)
+    print(f"constrained by: {cause}", file=sys.stderr)
+
 @program_pass
 def check_placement(prg, routidx):
     '''
@@ -466,11 +474,7 @@ def check_placement(prg, routidx):
 
         if endp_idx <= base_idx + offset:
             print("Constraint violation:", file=sys.stderr)
-            print("", file=sys.stderr)
-            print(f"  {base_idx:2x}: {base}", file=sys.stderr)
-            print(f"  {endp_idx:2x}: {endp}", file=sys.stderr)
-            print("", file=sys.stderr)
-            print(f"violate a constraint: {cause}", file=sys.stderr)
+            _print_constraint(constr, base_idx=base_idx, endp_idx=endp_idx)
 
 @program_pass
 def place_routine(prg, routidx):
@@ -519,6 +523,13 @@ def place_routine(prg, routidx):
                     inst_blockers[endp].remove(const)
                 if not len(inst_blockers[endp]):
                     ready.append(endp)
+
+        if set(placed[-2:]) == set([None]):
+            print("Blockers:", sys.stderr)
+            for constr in [c for l in inst_blockers.values() for c in l]:
+                _print_constraint(constr)
+            
+            raise RuntimeError("stuck")
 
     # TODO: optimize the initial placement further
     rout.instr = placed
