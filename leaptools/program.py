@@ -25,6 +25,8 @@ class Uninitialized(Operand):
 
 class Constant(Operand):
     def __init__(self, val):
+        if isinstance(val, float):
+            val = self.from_float(val).val
         self.val = val
 
     @classmethod
