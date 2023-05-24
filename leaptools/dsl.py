@@ -1,3 +1,4 @@
+import sys
 from .types import Opcode
 from .program import Routine, Instruction, Operand, Constant
 
@@ -72,5 +73,7 @@ class Builder:
 			inst = Instruction(opcode, None, *ops)
 			self.curr_rout.instr.append(inst)
 			self.ninstr += 1
+			frame = sys._getframe(1)
+			inst.src = f"{frame.f_code.co_filename}:{frame.f_lineno}"
 			return inst
 		return opcode_wrapper

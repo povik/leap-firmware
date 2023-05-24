@@ -143,6 +143,7 @@ class Instruction(Operand):
         self.opcode = Opcode(opcode)
         self.out = ops[0] if len(ops) else None
         self.ops = (list(ops) + [None, None, None, None])[1:4]
+        self.src = ""
 
     @classmethod
     def decode(self, *pieces):
@@ -224,7 +225,8 @@ class Instruction(Operand):
             op.operand_str() if op is not None else "--"
             for op in [self.out] + self.ops
         ])
-        return f"{self.opcode.name} {operand_list}"
+        post_note = f" # {self.src}" if self.src else ""
+        return f"{self.opcode.name} {operand_list}{post_note}"
 
 class Routine:
     def __init__(self, base=None, instr=None, waitfull_ports=[], waitempty_ports=[]):
