@@ -233,4 +233,33 @@ class Image:
         return self._lookup_section(*key) is not None
 
 if __name__ == "__main__":
-    Image.read(sys.argv[1]).dump()
+    import argparse
+    import struct
+
+    parser = argparse.ArgumentParser(description='Manipulation of LEAPFROG images')
+    parser.add_argument('filename')
+    parser.add_argument('-s', '--save', type=str)
+    parser.add_argument('-d', '--dump', action='store_true')
+    parser.add_argument('-i', '--imprint', type=str)
+    parser.add_argument('-a', '--add', type=lambda s: LEAPFROGSectionType(int(s, 16)))
+    parser.add_argument('-l', '--load-base', type=int, default=0)
+
+    args = parser.parse_args()
+
+    img = Image.read(args.filename)
+
+    if args.add:
+        data = sys.stdin.buffer.read()
+        assert len(data) % 4 == 0
+        img.reserve(args.add, range(args.load_base, args.load_base + len(data) // 4))
+        img[args.add,args.load_base:] = \
+                struct.unpack(f'<{len(data) // 4}I', data)
+
+    if args.imprint:
+        img.imprint = args.imprint
+
+    if args.dump or not args.save:
+        img.dump()
+
+    if args.save:
+        img.write(args.save)
