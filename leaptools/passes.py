@@ -563,6 +563,8 @@ def regalloc_intermediate(prg, routidx=None):
             instr_of_interest.add(inst)
 
         for comb in itertools.combinations(inst_deps, 2):
+            if comb[0] == comb[1]:
+                continue
             edges.add(frozenset(comb))
 
     # SAT variable: is output of instruction X stored in bank Y?
