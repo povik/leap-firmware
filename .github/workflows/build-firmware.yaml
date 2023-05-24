@@ -23,7 +23,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        apt update && apt install -y alsa-utils xxd
+        sudo apt update && sudo apt install -y alsa-utils xxd
     - name: Build
       run: |
         make -C firmware/leapmic
