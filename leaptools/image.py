@@ -94,8 +94,13 @@ class Image:
 
     @property
     def content(self):
+        imprint_cropped = self.imprint
+        if len(self.imprint) >= 32:
+            imprint_cropped = self.imprint[:31]
+            print(f"Warning: Cropping the imprint to {imprint_cropped!r}", file=sys.stderr)
+
         return Container(
-            imprint=self.imprint,
+            imprint=imprint_cropped,
             nsections=len(self.sections),
             section=self.sections,
         )
