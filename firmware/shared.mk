@@ -10,7 +10,7 @@ leap_firmware_pre.leapfrog: leap_firmware.py
 leap_firmware.leapfrog: leap_firmware_pre.leapfrog Makefile
 	echo "000000: c900 0000 c900 0000 0000 0000 c900 0000" | \
 			xxd -r | $(LEAPTOOLS_IMG) -s $@.tmp $< -a 0x30101 -l 6
-	$(LEAPTOOLS_IMG) -s $@.tmp $@.tmp --imprint "leapmic-$(FWNAME) `git describe --tags --always --dirty`"
+	$(LEAPTOOLS_IMG) -s $@.tmp $@.tmp --imprint "$(FWNAME) `git describe --tags --always --dirty`"
 	cp $@.tmp $@
 	rm $@.tmp
 
