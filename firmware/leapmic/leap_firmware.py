@@ -21,8 +21,14 @@ dc_block_save = Global(init=0.0)
 with b.Routine(waitempty_ports=[0x61], waitfull_ports=[0x26, 0x27, 0x29]):
 	pdm_samples = [b.TAKE(port << 24) for port in [0x26, 0x27, 0x29]]
 
-	pdm1 = b.F32_FMT(10 << 22, b.PDM6(0x40000000, pdm_samples[0]))
-	pdm2 = b.F32_FMT(10 << 22, b.PDM6(0x00000000, pdm_samples[0]))
+	input_select = b.PEEK(0x62 << 24)
+	pdm_selected = b.MUX(
+		b.MUX(pdm_samples[0], pdm_samples[1], b.ROT(input_select)),
+		pdm_samples[2], input_select
+	)
+
+	pdm1 = b.F32_FMT(10 << 22, b.PDM6(0x40000000, pdm_selected))
+	pdm2 = b.F32_FMT(10 << 22, b.PDM6(0x00000000, pdm_selected))
 
 	dc_block1 = b.FSUB(pdm_save, pdm1)
 	dc_block2 = b.FSUB(pdm1, pdm2)

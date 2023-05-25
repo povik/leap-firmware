@@ -6,6 +6,8 @@ $(FWNAME).bin: topology.conf leap_firmware.leapfrog
 
 leap_firmware.leapfrog: leap_firmware.py
 	$(LEAPTOOLS) -p 'compile_dsl "leap_firmware.py"; image_write "$@.tmp"'
+	echo "000000: 0000 0000" | \
+			xxd -r | $(LEAPTOOLS_IMG) -s $@.tmp $@.tmp -a 0x30100 -l 98
 	echo "000000: c900 0000 c900 0000 0000 0000 c900 0000" | \
 			xxd -r | $(LEAPTOOLS_IMG) -s $@.tmp $@.tmp -a 0x30101 -l 6
 	$(LEAPTOOLS_IMG) -s $@.tmp $@.tmp --imprint "$(FWNAME) `git describe --tags --always --dirty`"
