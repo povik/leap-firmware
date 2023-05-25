@@ -1,8 +1,8 @@
 FWNAME=leapmic
 include ../shared.mk
 
-$(FWNAME).bin: topology.conf leap_firmware.leapfrog
-	ALSA_CONFIG_TPLG=. alsatplg -c $< -o $@.tmp
+build/$(FWNAME)-%.bin: topology-%.conf build/leap_firmware-%.leapfrog
+	ALSA_CONFIG_DIR=$(shell pwd) ALSA_CONFIG_TPLG=. alsatplg -c $< -o $@.tmp
 
 	# Workaround for ALSA topology compiler having no way to set
 	# the 'mask' field of the enum control struct

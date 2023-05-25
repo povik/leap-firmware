@@ -1,5 +1,17 @@
 from leaptools.program import Register
 from leaptools.iir import *
+import os
+
+soc = os.getenv("TARGET_SOC") or "t8103"
+
+if soc in ["t8103", "t6000", "t8103-t6000"]:
+	pdm_ports = [0x26, 0x27, 0x29]
+elif soc in ["t8112"]:
+	pdm_ports = [0x22, 0x23, 0x25]
+elif soc in ["t6020"]:
+	pdm_ports = [0x22, 0x23, 0x29]
+else:
+	raise ValueError(f"unknown SoC: {soc}")
 
 Fbase = 2400000 // 5
 

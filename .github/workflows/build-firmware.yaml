@@ -33,4 +33,4 @@ jobs:
       with:
         name: firmware
         path: |
-          firmware/leapmic*/leapmic*.bin
+          firmware/leapmic*/build/leapmic*.bin
