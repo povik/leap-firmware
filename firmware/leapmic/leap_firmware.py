@@ -30,8 +30,8 @@ save1, save2, save3, save4 = \
 pdm_save = Global(init=0.0)
 dc_block_save = Global(init=0.0)
 
-with b.Routine(waitempty_ports=[0x61], waitfull_ports=[0x26, 0x27, 0x29]):
-	pdm_samples = [b.TAKE(port << 24) for port in [0x26, 0x27, 0x29]]
+with b.Routine(waitempty_ports=[0x61], waitfull_ports=pdm_ports):
+	pdm_samples = [b.TAKE(port << 24) for port in pdm_ports]
 
 	input_select = b.PEEK(0x62 << 24)
 	pdm_selected = b.MUX(
